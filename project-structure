@@ -1,0 +1,15 @@
+sevakstream/
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── routers/
+│   │   └── __init__.py
+│   ├── templates/
+│   │   └── index.html
+│   └── static/
+│       ├── css/
+│       └── js/
+├── .env
+├── .gitignore
+├── requirements.txt
+└── README.md
