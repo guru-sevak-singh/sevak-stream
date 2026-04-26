@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ app_name }} — Session</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface-2: #1a1a1a;
+            --border: rgba(255, 255, 255, 0.07);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --text-primary: #f0f0f0;
+            --text-secondary: #888;
+            --text-muted: #444;
+            --accent: #e8ff47;
+            --accent-dim: rgba(232, 255, 71, 0.12);
+            --red: #ff4f4f;
+            --red-dim: rgba(255, 79, 79, 0.12);
+            --green: #4fff91;
+            --green-dim: rgba(79, 255, 145, 0.12);
+            --font: 'DM Sans', sans-serif;
+            --mono: 'DM Mono', monospace;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* top bar */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--accent);
+            letter-spacing: 0.02em;
+        }
+
+        .divider-dot {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .session-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .session-id {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--surface-2);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .role-badge {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 4px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .role-badge.teacher {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(232, 255, 71, 0.2);
+        }
+
+        .role-badge.student {
+            background: var(--green-dim);
+            color: var(--green);
+            border: 1px solid rgba(79, 255, 145, 0.2);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rec-indicator {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--red);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .rec-indicator.visible {
+            display: flex;
+        }
+
+        .rec-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--red);
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .user-name {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .leave-btn {
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 7px 16px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 79, 79, 0.3);
+            background: var(--red-dim);
+            color: var(--red);
+            cursor: pointer;
+            transition: all 0.15s;
+            letter-spacing: 0.02em;
+        }
+
+        .leave-btn:hover {
+            background: rgba(255, 79, 79, 0.2);
+            border-color: rgba(255, 79, 79, 0.5);
+        }
+
+        /* main area */
+        .main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* teacher video — large */
+        .teacher-video-wrap {
+            width: 100%;
+            max-width: 960px;
+            aspect-ratio: 16/9;
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            position: relative;
+        }
+
+        #teacher-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* placeholder when no stream */
+        .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .placeholder-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .placeholder-icon svg {
+            width: 22px;
+            height: 22px;
+            opacity: 0.3;
+        }
+
+        .placeholder-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            letter-spacing: 0.02em;
+        }
+
+        /* self view — teacher only */
+        .self-view-wrap {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            width: 200px;
+            aspect-ratio: 16/9;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border-hover);
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: none;
+        }
+
+        .self-view-wrap.visible {
+            display: block;
+        }
+
+        #self-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transform: scaleX(-1);
+        }
+
+        .self-label {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            font-size: 10px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 3px 8px;
+            border-radius: 3px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        /* status bar at bottom */
+        .statusbar {
+            padding: 10px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            transition: background 0.3s;
+        }
+
+        .status-dot.connected {
+            background: var(--green);
+        }
+
+        .status-dot.connecting {
+            background: var(--accent);
+            animation: pulse 1s infinite;
+        }
+
+        .status-dot.error {
+            background: var(--red);
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--mono);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="topbar">
+        <div class="topbar-left">
+            <span class="logo">SevakStream</span>
+            <div class="divider-dot"></div>
+            <div class="session-info">
+                <span class="session-id">{{ session_id }}</span>
+                <span class="role-badge {{ role }}">{{ role }}</span>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="rec-indicator" id="rec-indicator">
+                <div class="rec-dot"></div>
+                <span>REC</span>
+            </div>
+            <span class="user-name">{{ name }}</span>
+            <button class="leave-btn" onclick="leaveSession()">Leave</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="teacher-video-wrap">
+            <video id="teacher-video" autoplay playsinline></video>
+            <div class="video-placeholder" id="placeholder">
+                <div class="placeholder-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
+                        <path
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                    </svg>
+                </div>
+                <span class="placeholder-text" id="placeholder-text">Waiting for session to start...</span>
+            </div>
+        </div>
+
+        <div class="self-view-wrap" id="self-view-wrap">
+            <video id="self-video" autoplay playsinline muted></video>
+            <span class="self-label">You</span>
+        </div>
+    </div>
+
+    <div class="statusbar">
+        <div class="status-dot connecting" id="status-dot"></div>
+        <span class="status-text" id="status-text">connecting...</span>
+    </div>
+
+    <script src="/static/js/room.js"></script>
+</body>
+
+</html>
